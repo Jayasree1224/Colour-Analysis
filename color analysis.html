@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colour Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ivory: #F8F4EE;
+    --warm-stone: #E8E0D4;
+    --bark: #9C8C7A;
+    --deep: #2A2220;
+    --accent: #C4956A;
+    --accent-pale: #F0E6D8;
+    --text: #2A2220;
+    --muted: #7A6E66;
+    --border: rgba(42,34,32,0.12);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--ivory);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    width: 100%;
+    text-align: center;
+    padding: 4rem 2rem 2rem;
+    position: relative;
+  }
+
+  .eyebrow {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3rem, 6vw, 5.5rem);
+    font-weight: 300;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    color: var(--deep);
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .subtitle {
+    margin-top: 1.25rem;
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 300;
+    max-width: 380px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.7;
+  }
+
+  .progress-bar {
+    width: 100%;
+    max-width: 560px;
+    height: 2px;
+    background: var(--warm-stone);
+    margin: 2.5rem auto 0;
+    position: relative;
+    border-radius: 2px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .step-indicator {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+
+  main {
+    width: 100%;
+    max-width: 560px;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  .question-card {
+    animation: fadeUp 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-number {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+    margin-bottom: 0.6rem;
+  }
+
+  .q-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+    font-weight: 400;
+    line-height: 1.25;
+    color: var(--deep);
+    margin-bottom: 0.75rem;
+  }
+
+  .q-hint {
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 300;
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    background: white;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .option::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent-pale);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .option:hover { border-color: var(--accent); }
+  .option:hover::before { opacity: 0.5; }
+
+  .option.selected {
+    border-color: var(--accent);
+    background: var(--accent-pale);
+  }
+
+  .option-swatch {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 1px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .option-body {
+    position: relative;
+    z-index: 1;
+  }
+
+  .option-label {
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--deep);
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .option-desc {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 300;
+    line-height: 1.5;
+  }
+
+  .radio-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--bark);
+    flex-shrink: 0;
+    margin-top: 10px;
+    margin-left: auto;
+    position: relative;
+    z-index: 1;
+    transition: border-color 0.2s;
+  }
+
+  .option.selected .radio-dot {
+    border-color: var(--accent);
+    background: var(--accent);
+    box-shadow: inset 0 0 0 3px white;
+  }
+
+  .btn-next {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2rem;
+    padding: 14px 32px;
+    background: var(--deep);
+    color: var(--ivory);
+    border: none;
+    border-radius: 100px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .btn-next.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .btn-next:hover { background: #1a1614; transform: translateY(-1px); }
+  .btn-next:active { transform: translateY(0); }
+
+  .btn-next svg { transition: transform 0.2s; }
+  .btn-next:hover svg { transform: translateX(3px); }
+
+  /* Results */
+  .results {
+    animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .season-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px 6px 8px;
+    background: var(--accent-pale);
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+
+  .season-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+  }
+
+  .result-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.4rem, 5vw, 3.8rem);
+    font-weight: 300;
+    color: var(--deep);
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+  }
+
+  .result-title em { font-style: italic; color: var(--accent); }
+
+  .result-desc {
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 300;
+    line-height: 1.75;
+    margin-bottom: 2.5rem;
+    max-width: 460px;
+  }
+
+  .palette-section {
+    margin-bottom: 2.5rem;
+  }
+
+  .palette-label {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--bark);
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+  }
+
+  .swatch-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .swatch {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.06);
+    transition: transform 0.2s;
+    cursor: default;
+  }
+
+  .swatch:hover { transform: scale(1.08); }
+
+  .swatch-name {
+    font-size: 10px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.3;
+    font-weight: 400;
+  }
+
+  .avoid-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+  }
+
+  .avoid-swatch {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.06);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .avoid-swatch::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 45%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.15) 55%, transparent 55%);
+  }
+
+  .tips-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.75rem;
+    margin-bottom: 2rem;
+  }
+
+  .tips-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: var(--deep);
+    margin-bottom: 1rem;
+  }
+
+  .tip {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  .tip-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent-pale);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+  }
+
+  .tip-icon svg { width: 10px; height: 10px; }
+
+  .btn-restart {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 400;
+  }
+
+  .btn-restart:hover { border-color: var(--bark); color: var(--deep); }
+
+  @media (max-width: 480px) {
+    .palette-grid, .avoid-grid { grid-template-columns: repeat(4, 1fr); }
+    h1 { font-size: 2.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Personal Colour Analysis</p>
+  <h1>Find your <em>season</em></h1>
+  <p class="subtitle">Three questions to discover the palette that makes you glow.</p>
+  <div class="progress-bar" style="max-width:560px">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+  <p class="step-indicator" id="stepIndicator">Question 1 of 3</p>
+</header>
+
+<main id="main"></main>
+
+<script>
+const questions = [
+  {
+    id: 'undertone',
+    number: '01',
+    text: 'What is your skin\'s undertone?',
+    hint: 'Look at the veins on your inner wrist in natural daylight. Blue/purple suggests cool, green suggests warm, and both suggest neutral.',
+    options: [
+      { value: 'cool', label: 'Cool', desc: 'Veins appear blue or purple. You burn easily and look best in silver jewellery.', swatch: '#C4B8D4' },
+      { value: 'warm', label: 'Warm', desc: 'Veins appear greenish. You tan easily and gold jewellery suits you beautifully.', swatch: '#D4A96A' },
+      { value: 'neutral', label: 'Neutral', desc: 'Veins appear blue-green. Both silver and gold jewellery complement you equally.', swatch: '#C4B8A8' },
+    ]
+  },
+  {
+    id: 'contrast',
+    number: '02',
+    text: 'How much contrast do you have naturally?',
+    hint: 'Consider the difference between your hair colour, eye colour, and skin tone. High contrast means striking differences; low contrast means they blend harmoniously.',
+    options: [
+      { value: 'high', label: 'High contrast', desc: 'Dark hair with light skin, or very light hair with darker features. Eyes are striking and defined.', swatch: '#1A1614' },
+      { value: 'medium', label: 'Medium contrast', desc: 'Hair and skin tone are somewhat similar. Features are distinct but harmonious.', swatch: '#8C7A6A' },
+      { value: 'low', label: 'Low contrast', desc: 'Hair, eyes, and skin are all in similar tonal range — soft, blended, harmonious.', swatch: '#D4C8B8' },
+    ]
+  },
+  {
+    id: 'depth',
+    number: '03',
+    text: 'How would you describe your overall colouring?',
+    hint: 'Think about your natural hair colour and skin tone together. Are you on the lighter, deeper, or somewhere in the middle of the spectrum?',
+    options: [
+      { value: 'light', label: 'Light & fair', desc: 'Fair to light skin, light blonde, ash, or strawberry hair. Delicate, soft overall appearance.', swatch: '#F0E8DC' },
+      { value: 'medium', label: 'Medium depth', desc: 'Medium skin tone, brown, chestnut, or medium blonde hair. A versatile middle ground.', swatch: '#C4A882' },
+      { value: 'deep', label: 'Deep & rich', desc: 'Medium-deep to deep skin, dark brown or black hair. Rich, warm, or cool depth.', swatch: '#4A3428' },
+    ]
+  }
+];
+
+const seasons = {
+  // Spring: warm + medium/low contrast + light/medium
+  warm_medium_light: 'light spring',
+  warm_medium_medium: 'true spring',
+  warm_low_light: 'light spring',
+  warm_low_medium: 'light spring',
+  warm_high_light: 'clear spring',
+  warm_high_medium: 'clear spring',
+  warm_medium_deep: 'warm autumn',
+  warm_low_deep: 'soft autumn',
+  warm_high_deep: 'deep autumn',
+  // Cool: cool undertone
+  cool_high_light: 'clear winter',
+  cool_high_medium: 'true winter',
+  cool_high_deep: 'deep winter',
+  cool_medium_light: 'cool summer',
+  cool_medium_medium: 'true summer',
+  cool_medium_deep: 'deep winter',
+  cool_low_light: 'light summer',
+  cool_low_medium: 'soft summer',
+  cool_low_deep: 'deep winter',
+  // Neutral
+  neutral_high_light: 'clear spring',
+  neutral_high_medium: 'clear winter',
+  neutral_high_deep: 'deep winter',
+  neutral_medium_light: 'light spring',
+  neutral_medium_medium: 'true summer',
+  neutral_medium_deep: 'soft autumn',
+  neutral_low_light: 'light summer',
+  neutral_low_medium: 'soft autumn',
+  neutral_low_deep: 'deep autumn',
+};
+
+const paletteData = {
+  'light spring': {
+    emoji: '🌸',
+    tagline: 'Delicate warmth, fresh bloom',
+    desc: 'You radiate with soft, warm hues that echo the first flowers of spring. Your palette is luminous and gentle — think peachy pinks, warm corals, and soft golden yellows that never overpower your natural lightness.',
+    colors: [
+      { hex: '#F9C8A0', name: 'Peach cream' },
+      { hex: '#F4A675', name: 'Warm coral' },
+      { hex: '#F7D9B5', name: 'Apricot' },
+      { hex: '#ECBA8A', name: 'Honeydew' },
+      { hex: '#C8D98E', name: 'Celery' },
+      { hex: '#A8C8A4', name: 'Mint green' },
+    ],
+    avoid: ['#1A1A2E', '#4A0E8F', '#2D2D2D', '#800020', '#00305C', '#5C1A2E'],
+    tips: [
+      'Keep foundations and powders slightly warm — avoid anything ashy or pink.',
+      'Wear ivory and warm white over stark bright white, which can wash you out.',
+      'Peachy-pink blusher will bring you to life better than anything rosy or red.',
+      'Try golden highlights — they complement your naturally warm undertones.',
+    ]
+  },
+  'true spring': {
+    emoji: '🌼',
+    tagline: 'Warm, vivid, golden',
+    desc: 'You carry the energy of a sunny spring day. Your palette is bright and warm — rich corals, golden yellows, bright greens, and clear teals that echo the vibrancy you naturally project.',
+    colors: [
+      { hex: '#FF8C5A', name: 'Warm coral' },
+      { hex: '#FFCB47', name: 'Golden yellow' },
+      { hex: '#6DC98E', name: 'Spring green' },
+      { hex: '#3EAFCA', name: 'Clear teal' },
+      { hex: '#F4936A', name: 'Tomato peach' },
+      { hex: '#FFA07A', name: 'Salmon' },
+    ],
+    avoid: ['#708090', '#9370DB', '#2F4F4F', '#C0C0C0', '#800080', '#483D8B'],
+    tips: [
+      'Embrace warm, saturated colours — you can carry brights that others cannot.',
+      'Gold jewellery is your signature metal. It brings your complexion alive.',
+      'Avoid anything with a grey or blue base — it will make you look sallow.',
+      'Coral lipstick is your superpower. Try it even if you think it\'s bold.',
+    ]
+  },
+  'clear spring': {
+    emoji: '✨',
+    tagline: 'Bright, clear, contrasting',
+    desc: 'Your high contrast and warmth create a striking clarity. You suit colours that are vivid and warm — clear, saturated shades with no muddiness that match your naturally high-definition appearance.',
+    colors: [
+      { hex: '#FF5A5A', name: 'Clear red' },
+      { hex: '#FF9442', name: 'Warm orange' },
+      { hex: '#FFE04B', name: 'Sunny yellow' },
+      { hex: '#3CCF88', name: 'Clear emerald' },
+      { hex: '#FFC0CB', name: 'Clear pink' },
+      { hex: '#00B4D8', name: 'Clear aqua' },
+    ],
+    avoid: ['#808080', '#BC8F8F', '#8B7355', '#778899', '#A9A9A9', '#696969'],
+    tips: [
+      'You can wear bold, saturated colours that most others would find overwhelming.',
+      'Black near your face works because of your high contrast — unlike most springs.',
+      'Avoid soft, muted, or dusty versions of colours — they\'ll dull your natural clarity.',
+      'Mixing brights with neutrals in an outfit maximises your naturally high contrast.',
+    ]
+  },
+  'light summer': {
+    emoji: '🌿',
+    tagline: 'Soft, cool, and luminous',
+    desc: 'You embody the gentle light of an overcast summer day. Your palette is soft and cool — muted lavenders, powder blues, rose pinks, and quiet greys that honour your naturally delicate colouring.',
+    colors: [
+      { hex: '#C4B4D4', name: 'Soft lavender' },
+      { hex: '#A8C8D4', name: 'Powder blue' },
+      { hex: '#D4A8B8', name: 'Dusty rose' },
+      { hex: '#B8C8B8', name: 'Sage grey' },
+      { hex: '#E8D4DC', name: 'Blush' },
+      { hex: '#98B8C8', name: 'Sky mist' },
+    ],
+    avoid: ['#FF6600', '#FFD700', '#8B4513', '#FF4500', '#DAA520', '#D2691E'],
+    tips: [
+      'Wear soft, cool colours close to your face — they\'ll make your skin glow.',
+      'Rose-toned blushers work beautifully; avoid anything peachy or orange.',
+      'Silver and white-gold jewellery flatters more than yellow gold.',
+      'Stick to cool-toned neutrals like taupe, soft grey, and dove white.',
+    ]
+  },
+  'true summer': {
+    emoji: '🌊',
+    tagline: 'Cool, muted, and serene',
+    desc: 'You have the soft beauty of a hazy summer afternoon. Your palette is cool and gently muted — dusty pinks, soft blues, muted mauves, and smoky lavenders that blend harmoniously with your natural colouring.',
+    colors: [
+      { hex: '#9B8EA8', name: 'Dusty mauve' },
+      { hex: '#7BA7BC', name: 'Smoky blue' },
+      { hex: '#B8A8C4', name: 'Soft purple' },
+      { hex: '#9AB8A8', name: 'Sea glass' },
+      { hex: '#C8A8B4', name: 'Muted rose' },
+      { hex: '#B4B8C8', name: 'Periwinkle' },
+    ],
+    avoid: ['#FF4500', '#FFD700', '#FF6600', '#8B0000', '#006400', '#FF8C00'],
+    tips: [
+      'Every colour you wear should have a cool, slightly greyed quality.',
+      'Avoid anything bright or warm — it will make you look washed out or harsh.',
+      'Plum and dusty rose lipsticks are your ideal everyday shades.',
+      'Embrace the power of monochromatic dressing in your cool neutrals.',
+    ]
+  },
+  'soft summer': {
+    emoji: '🪻',
+    tagline: 'Blended, soft, and effortless',
+    desc: 'You are the bridge between summer and autumn — soft, blended, and beautifully low-key. Your palette is quietly beautiful: muted mauves, dusty teals, greyed greens, and soft taupes.',
+    colors: [
+      { hex: '#A89898', name: 'Dusty rose grey' },
+      { hex: '#88A898', name: 'Sage mist' },
+      { hex: '#A898B8', name: 'Mauve grey' },
+      { hex: '#98B8A8', name: 'Eucalyptus' },
+      { hex: '#B8A8A8', name: 'Rosy taupe' },
+      { hex: '#A8A8B8', name: 'Lavender grey' },
+    ],
+    avoid: ['#FF0000', '#FFFF00', '#FF6600', '#0000FF', '#00FF00', '#FF1493'],
+    tips: [
+      'Avoid anything intensely bright — softness is your greatest strength.',
+      'Your colours should look slightly faded or powdery, never vivid or sharp.',
+      'A blend of warm-ish cool tones works best — think dusty sage and soft mauve.',
+      'Contour lightly — your natural look is gently blended, not sharply defined.',
+    ]
+  },
+  'warm autumn': {
+    emoji: '🍂',
+    tagline: 'Rich, earthy, golden',
+    desc: 'You carry the warmth of autumn harvest. Your palette is deeply warm and richly earthy — terracotta, olive, rust, warm chocolate, and golden tones that complement your naturally warm, sun-kissed appearance.',
+    colors: [
+      { hex: '#C4622A', name: 'Terracotta' },
+      { hex: '#8B6914', name: 'Olive gold' },
+      { hex: '#A05C3C', name: 'Rust' },
+      { hex: '#6B4423', name: 'Dark chocolate' },
+      { hex: '#D4A838', name: 'Warm amber' },
+      { hex: '#7A9A4A', name: 'Moss green' },
+    ],
+    avoid: ['#E0E0E0', '#B0C4DE', '#ADD8E6', '#FFB6C1', '#E6E6FA', '#F0F8FF'],
+    tips: [
+      'You can wear rich, earthy tones from head to toe — they\'re all yours.',
+      'Warm metallics like bronze, copper, and antique gold are your signature.',
+      'Avoid cool pastels and anything with a silvery or icy quality.',
+      'Warm foundation with golden or olive undertones will match beautifully.',
+    ]
+  },
+  'soft autumn': {
+    emoji: '🌾',
+    tagline: 'Muted, warm, and gentle',
+    desc: 'You have a gentle, earthy warmth — colours that are softer than true autumn but still grounded in warm tones. Your palette includes muted teals, warm taupes, dusty corals, and soft greens.',
+    colors: [
+      { hex: '#B88C6A', name: 'Warm taupe' },
+      { hex: '#9AB88A', name: 'Sage' },
+      { hex: '#C4907A', name: 'Dusty coral' },
+      { hex: '#8A9870', name: 'Olive grey' },
+      { hex: '#B89878', name: 'Sand' },
+      { hex: '#7A8A68', name: 'Khaki green' },
+    ],
+    avoid: ['#FF69B4', '#00CED1', '#7B68EE', '#FF1493', '#00BFFF', '#DA70D6'],
+    tips: [
+      'Your colours should feel natural and organic, never cold or electric.',
+      'Think of an autumn forest: muted greens, dusty browns, and terracotta.',
+      'Avoid anything too bright, too cool, or too pale near your face.',
+      'Tawny bronzer and peachy-coral blush will always look natural on you.',
+    ]
+  },
+  'deep autumn': {
+    emoji: '🍁',
+    tagline: 'Dark, rich, and commanding',
+    desc: 'You project dramatic, earthy richness. Your palette is deeply warm and saturated — forest greens, burnt orange, deep chocolate, burgundy, and rich gold that mirror your naturally deep and warm colouring.',
+    colors: [
+      { hex: '#5A2D1A', name: 'Deep chocolate' },
+      { hex: '#2A4A2A', name: 'Forest green' },
+      { hex: '#8B2800', name: 'Burnt sienna' },
+      { hex: '#6B3A1F', name: 'Cognac' },
+      { hex: '#8B6914', name: 'Antique gold' },
+      { hex: '#5C1A2E', name: 'Burgundy' },
+    ],
+    avoid: ['#E8E8E8', '#D4E4F0', '#F4D0DC', '#E8E0F0', '#D0E8D4', '#F8F0E0'],
+    tips: [
+      'Deep, rich colours are your power — lean into them fully.',
+      'You can pull off deep jewel tones that bring out the richness in your skin.',
+      'Avoid light, pastel, or icy shades — they create harsh contrast.',
+      'Warm dark foundations with golden or olive undertones work best.',
+    ]
+  },
+  'clear winter': {
+    emoji: '❄️',
+    tagline: 'Icy, cool, and striking',
+    desc: 'You have a crystalline clarity to your colouring — high contrast with cool undertones. Your palette is dramatic: true black, pure white, icy blue, cool fuchsia, and bright jewel tones that reflect your natural intensity.',
+    colors: [
+      { hex: '#1A1A2E', name: 'True black' },
+      { hex: '#F4F4F8', name: 'Pure white' },
+      { hex: '#A8D4E8', name: 'Icy blue' },
+      { hex: '#D44090', name: 'Cool fuchsia' },
+      { hex: '#4A3A9A', name: 'Royal purple' },
+      { hex: '#1A6A4A', name: 'Cool emerald' },
+    ],
+    avoid: ['#D4A838', '#C4622A', '#8B6914', '#D4884A', '#B87A3A', '#A05C2A'],
+    tips: [
+      'True black is your best neutral — wear it freely and confidently.',
+      'Pure white and icy pastels bring out your natural cool luminosity.',
+      'Avoid anything warm, golden, or earthy — it will make you look sallow.',
+      'Cool-toned, deep berry or plum lipstick is transformative on you.',
+    ]
+  },
+  'true winter': {
+    emoji: '🌨️',
+    tagline: 'Cool, deep, and powerful',
+    desc: 'You are defined by cool depth and natural drama. Your palette is cool and saturated — deep navy, charcoal, jewel-toned emerald, magenta, and pure white that channel your commanding natural presence.',
+    colors: [
+      { hex: '#0D1B3E', name: 'Deep navy' },
+      { hex: '#2D3A3A', name: 'Charcoal' },
+      { hex: '#1A5C3A', name: 'Jewel emerald' },
+      { hex: '#B42060', name: 'Magenta' },
+      { hex: '#5C3A8A', name: 'Deep violet' },
+      { hex: '#E8E8F0', name: 'Cool white' },
+    ],
+    avoid: ['#FFD700', '#FFA500', '#FF8C00', '#DAA520', '#CD853F', '#D2691E'],
+    tips: [
+      'Deep, cool jewel tones are made for you — embrace their full intensity.',
+      'Stark contrast in outfits (black and white) plays beautifully to your colouring.',
+      'Avoid warm shades entirely — gold, orange, and brown will dull your skin.',
+      'Cool silver jewellery (platinum, white gold) is your perfect metal.',
+    ]
+  },
+  'deep winter': {
+    emoji: '🌑',
+    tagline: 'Dark, cool, and magnetic',
+    desc: 'You have a powerful, deep colouring with cool undertones. Your palette is rich and dramatic: deep jewel tones, cool darks, and striking contrasts that match the depth and intensity of your natural colouring.',
+    colors: [
+      { hex: '#0A0A20', name: 'Midnight navy' },
+      { hex: '#2A1A3A', name: 'Deep plum' },
+      { hex: '#0A2A1A', name: 'Bottle green' },
+      { hex: '#3A0A1A', name: 'Black cherry' },
+      { hex: '#8A1A2A', name: 'Deep ruby' },
+      { hex: '#D4D4E0', name: 'Silver white' },
+    ],
+    avoid: ['#FAF0E6', '#FFF8DC', '#FFFACD', '#FFEFD5', '#FFF5EE', '#FAEBD7'],
+    tips: [
+      'Very deep, dark colours belong to you — your skin tone carries them beautifully.',
+      'Avoid anything light, pastel, or warm near your face — it creates a stark mismatch.',
+      'Rich jewel tones like deep sapphire, garnet, and emerald are your strongest choices.',
+      'Cool-toned foundations are essential — warm or neutral bases will look off.',
+    ]
+  }
+};
+
+let answers = {};
+let current = 0;
+
+function getSeasonKey() {
+  const u = answers.undertone;
+  const c = answers.contrast;
+  const d = answers.depth;
+  const key = `${u}_${c}_${d}`;
+  return seasons[key] || 'true summer';
+}
+
+function renderQuestion() {
+  const q = questions[current];
+  const pct = (current / 3) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('stepIndicator').textContent = `Question ${current + 1} of 3`;
+
+  const selected = answers[q.id];
+  document.getElementById('main').innerHTML = `
+    <div class="question-card">
+      <p class="q-number">${q.number}</p>
+      <h2 class="q-text">${q.text}</h2>
+      <p class="q-hint">${q.hint}</p>
+      <div class="options" id="options">
+        ${q.options.map(opt => `
+          <button class="option ${selected === opt.value ? 'selected' : ''}" onclick="select('${q.id}', '${opt.value}')">
+            <div class="option-swatch" style="background:${opt.swatch}"></div>
+            <div class="option-body">
+              <span class="option-label">${opt.label}</span>
+              <span class="option-desc">${opt.desc}</span>
+            </div>
+            <div class="radio-dot"></div>
+          </button>
+        `).join('')}
+      </div>
+      <button class="btn-next ${selected ? 'active' : ''}" id="btnNext" onclick="next()">
+        ${current < 2 ? 'Next question' : 'See my palette'}
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  `;
+}
+
+function select(id, value) {
+  answers[id] = value;
+  document.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  document.getElementById('btnNext').classList.add('active');
+}
+
+function next() {
+  if (!answers[questions[current].id]) return;
+  current++;
+  if (current >= 3) {
+    renderResults();
+  } else {
+    renderQuestion();
+  }
+}
+
+function renderResults() {
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('stepIndicator').textContent = 'Your results';
+
+  const seasonKey = getSeasonKey();
+  const data = paletteData[seasonKey] || paletteData['true summer'];
+  const seasonName = seasonKey.charAt(0).toUpperCase() + seasonKey.slice(1);
+
+  document.getElementById('main').innerHTML = `
+    <div class="results">
+      <div class="season-badge">
+        <div class="season-dot" style="background:${data.colors[0].hex}"></div>
+        Your season
+      </div>
+      <h2 class="result-title">You are a<br><em>${seasonName}</em></h2>
+      <p class="result-desc">${data.desc}</p>
+
+      <div class="palette-section">
+        <p class="palette-label">Your signature colours</p>
+        <div class="palette-grid">
+          ${data.colors.map(c => `
+            <div class="swatch-wrap">
+              <div class="swatch" style="background:${c.hex}" title="${c.name}"></div>
+              <span class="swatch-name">${c.name}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="palette-section">
+        <p class="palette-label">Colours to avoid near your face</p>
+        <div class="avoid-grid">
+          ${data.avoid.map(hex => `
+            <div class="avoid-swatch" style="background:${hex}" title="Avoid"></div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="tips-card">
+        <p class="tips-title">Styling tips for your season</p>
+        ${data.tips.map(tip => `
+          <div class="tip">
+            <div class="tip-icon">
+              <svg viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 5l2 2 4-4" stroke="#C4956A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <span>${tip}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <button class="btn-restart" onclick="restart()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M1 7a6 6 0 1 1 1.5 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          <path d="M1 11V7h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Start again
+      </button>
+    </div>
+  `;
+}
+
+function restart() {
+  answers = {};
+  current = 0;
+  renderQuestion();
+}
+
+renderQuestion();
+</script>
+</body>
+</html>
